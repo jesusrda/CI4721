@@ -1,0 +1,78 @@
+-- Gramática --
+S -> I$
+I -> try I catch I finally I
+   | try I catch I
+   | I ; I
+   | instr
+
+-- Estados de la máquina característica LALR --
+I0:
+S -> . I                                        {$}
+I -> . try I catch I finally I                  {$, ;}
+I -> . try I catch I                            {$, ;}
+I -> . I ; I                                    {$, ;}
+I -> . instr                                    {$, ;}
+ 
+I1:
+S -> I . $                                      {$}
+I -> I . ; I                                    {$,;}
+
+I39:
+S -> I $ .                                      {$}
+
+I2-6-13-20:
+I -> try . I catch I finally I                  {$, ;, catch, finally}
+I -> try . I catch I                            {$, ;, catch, finally}
+I -> . try I catch I finally I                  {$, ;, catch, finally}
+I -> . try I catch I                            {$, ;, catch, finally}
+I -> . I ; I                                    {$, ;, catch, finally}
+I -> . instr                                    {$, ;, catch, finally}
+
+I3-7-14-21:
+I -> instr .                                    {$, ;, catch, finally}
+
+I4-10-18-26:
+I -> I ; . I                                    {$, ;, catch, finally}
+I -> . try I catch I finally I                  {$, ;, catch, finally}
+I -> . try I catch I                            {$, ;, catch, finally}
+I -> . I ; I                                    {$, ;, catch, finally}
+I -> . instr                                    {$, ;, catch, finally}
+
+I5-11-19-27:
+I -> try I . catch I finally I                  {$, ;, catch, finally}
+I -> try I . catch I                            {$, ;, catch, finally}
+I -> I . ; I                                    {$, ;, catch, finally}
+
+I8-15-24-30:
+I -> I ; I .                                    {$, ;, catch, finally}
+I -> I . ; I                                    {$, ;, catch, finally}
+-- Conflicto Shift/Reduce
+-- Resolvemos con Reduce (; asocia a izquierda)
+
+I9-16-25-31:
+I -> try I catch . I finally I                  {$, ;, catch, finally}
+I -> try I catch . I                            {$, ;, catch, finally}
+I -> . try I catch I finally I                  {$, ;, catch, finally}
+I -> . try I catch I                            {$, ;, catch, finally
+I -> . I ; I                                    {$, ;, catch, finally}
+I -> . instr                                    {$, ;, catch, finally}
+
+I12-22-29-24:
+I -> try I catch I . finally I                  {$, ;, catch, finally}
+I -> try I catch I .                            {$, ;, catch, finally}
+I -> I . ; I                                    {$, ;, catch, finally}
+-- Conflicto Shift/Reduce
+-- Resolvemos con shift (; domina al catch)
+
+I17-28-33-36:
+I -> try I catch I finally . I                  {$, ;, catch, finally}
+I -> . try I catch I finally I                  {$, ;, catch, finally}
+I -> . try I catch I                            {$, ;, catch, finally
+I -> . I ; I                                    {$, ;, catch, finally}
+I -> . instr                                    {$, ;, catch, finally}
+
+I23-32-35-37:
+I -> try I catch I finally I .                  {$, ;, catch, finally}
+I -> I . ; I                                    {$, ;, catch, finally}
+-- Conflicto Shift/Reduce
+-- Resolvemos con Reduce (finally domina a ;)
