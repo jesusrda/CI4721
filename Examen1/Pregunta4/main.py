@@ -57,7 +57,6 @@ def insert_precedence(op1: str, prec: str, op2: str, parser: Parser):
 def run():
 
     parser = Parser()
-    parser = None
 
     while True:
 
@@ -75,7 +74,7 @@ def run():
                 print("error: instrucción inválida. Argumentos insuficientes.")
                 continue
             
-            add_rule(inpt[1], input[2:], parser)
+            add_rule(inpt[1], inpt[2:], parser)
 
         elif instr == "INIT":
             
@@ -95,11 +94,11 @@ def run():
 
         elif instr == "BUILD":
             
-            try:
-                parser.build()
-            except Exception as ex:
-                print("error: " + str(ex))
-                continue
+           # try:
+            parser.build()
+           # except Exception as ex:
+            #    print("error: " + str(ex))
+            #    continue
 
         elif instr == "PARSE":
             

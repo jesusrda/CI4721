@@ -6,7 +6,7 @@ tkn_rgx = "[ -~]+"
 upper_rgx = "[A-Z]|$"
 
 def is_non_terminal(symbol: str) -> bool:
-    return isinstance(symbol, str) and len(str) == 1 and symbol.isupper()
+    return isinstance(symbol, str) and len(symbol) == 1 and symbol.isupper()
 
 def valid_token(symbol: str) -> bool:
     return (re.fullmatch(tkn_rgx, symbol) is not None) and (re.search(upper_rgx, symbol) is not None)
