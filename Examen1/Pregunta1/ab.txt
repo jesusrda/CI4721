@@ -88,7 +88,7 @@ I -> try I catch I . finally I                  {$, ;}
 I -> try I catch I .                            {$, ;}
 I -> I . ; I                                    {$, ;, finally}
 -- Conflicto Shift/Reduce
--- Resolvemos con shift (; domina al catch)
+-- Si vesolvemos con shift (; domina al catch)
 
 I13:
 I -> try . I catch I finally I                  {$, ;, finally}
@@ -195,8 +195,9 @@ I29:
 I -> try I catch I . finally I                  {$, ;, finally}
 I -> try I catch I .                            {$, ;, finally}
 I -> I . ; I                                    {$, ;, finally}
--- Conflicto Shift/Reduce
--- Resolvemos con shift (; domina al catch)
+-- 2 conflictos Shift/Reduce
+-- Si el siguiente es ;, resolvemos con shift (; domina al catch)
+-- Si el siguiente es finally, resolvemos con shift (finally asocia con el try mas interno)
 
 I30:
 I -> I ; I .                                    {$, ;, catch, finally}
@@ -229,8 +230,9 @@ I34:
 I -> try I catch I . finally I                  {$, ;, catch, finally}
 I -> try I catch I .                            {$, ;, catch, finally}
 I -> I . ; I                                    {$, ;, catch, finally}
--- Conflicto Shift/Reduce
--- Resolvemos con shift (; domina al catch)
+-- 2 conflictos Shift/Reduce
+-- Si el siguiente es ;, resolvemos con shift (; domina al catch)
+-- Si el siguiente es finally, resolvemos con shift (finally asocia con el try mas interno)
 
 I35:
 I -> try I catch I finally I .                  {$, ;, finally}

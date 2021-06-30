@@ -61,8 +61,9 @@ I12-22-29-24:
 I -> try I catch I . finally I                  {$, ;, catch, finally}
 I -> try I catch I .                            {$, ;, catch, finally}
 I -> I . ; I                                    {$, ;, catch, finally}
--- Conflicto Shift/Reduce
--- Resolvemos con shift (; domina al catch)
+-- 2 conflictos Shift/Reduce
+-- Si el siguiente es ;, resolvemos con shift (; domina al catch)
+-- Si el siguiente es finally, resolvemos con shift (finally asocia con el try mas interno)
 
 I17-28-33-36:
 I -> try I catch I finally . I                  {$, ;, catch, finally}
