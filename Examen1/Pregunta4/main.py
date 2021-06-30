@@ -12,7 +12,7 @@ def add_rule(symbol: str, rule: List[str], parser: Parser):
         print(f"error: {symbol} no es un símbolo terminal.")
         return
 
-    if not all(valid_token(x) for x in rule):
+    if any(not valid_token(x) for x in rule):
         print(f"error: token inválido.")
         return
     
@@ -54,6 +54,17 @@ def insert_precedence(op1: str, prec: str, op2: str, parser: Parser):
     except Exception as ex:
         print("error: " + str(ex))        
 
+def parse(symbols: List[str], parser: Parser):
+
+    if any(not valid_token(x) or is_non_terminal(x) for x in symbols):
+        print(f"error: token inválido")
+
+    #try:
+    parser.parse(symbols)
+    #except Exception as ex:
+    #    print("error: " + str(ex))
+    #    return
+
 def run():
 
     parser = Parser()
@@ -63,7 +74,6 @@ def run():
         inpt = input().strip().split()
 
         if len(inpt) == 0:
-            print("error: instrucción vacía.")
             continue
     
         instr = inpt[0]
@@ -94,23 +104,19 @@ def run():
 
         elif instr == "BUILD":
             
-           # try:
-            parser.build()
-           # except Exception as ex:
-            #    print("error: " + str(ex))
-            #    continue
-
-        elif instr == "PARSE":
-            
-            if parser is None:
-                print("error: ningún analizador sintáctico ha sido construido")
-                continue
-
             try:
-                parser.parse(inpt[1:])
+                parser.build()
             except Exception as ex:
                 print("error: " + str(ex))
                 continue
+
+        elif instr == "PARSE":
+            
+            if not parser.built:
+                print("error: ningún analizador sintáctico ha sido construido")
+                continue
+
+            parse(inpt[1:], parser)
 
 
         elif instr == "EXIT":

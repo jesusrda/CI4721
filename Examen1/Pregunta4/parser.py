@@ -24,46 +24,57 @@ class Parser:
     built = False
 
     def _f(self, index: str):
+        """ f function for parsing """
         return self.dist[self.cc[index]]
     
     def _g(self, index: str):
+        """ g function for parsing """
         return self.dist[self.cc[index + self.n_operators]]
 
     def add_rule(self, symbol: str, symbols: List[str]):
-
+        """ Function to insert a production in the parser  """
+        
         if self.built:
             raise Exception(f"no se puede insertar más producciones: analizador construido")
 
         if len(symbols) == 0:
+            # There is already a lambda production, we can not insert more than one
             if self.must_be_init_sym is not None and self.must_be_init_sym != symbol:
                 raise Exception(f"no se puede insertar más de una lambda producción.")
             else:
                 self.must_be_init = symbol
 
+        # Storing initial symbol of the rule
         self.non_terminals.add(symbol)
 
+        # Adding operators to our state
         for sym in symbols:
             if not is_non_terminal(sym) and sym not in self.opr_index:
+                print(sym)
                 self.opr_index[sym] = self.n_operators
                 self.str_val[self.n_operators] = sym
                 self.n_operators += 1
         
+        # Storing rule for parsing
         rule = "$".join(symbols)
         self.rules[rule] = symbol
 
-
-    
     def mark_init(self, symbol: str):
+        """ Function to set the initial symbol of the grammar """
 
         if self.built:
             raise Exception(f"no se puede cambiar el súmbolo inicial: analizador construido")
 
         if symbol not in self.non_terminals:
             raise Exception(f"no existen reglas definidas para {symbol}.")
+
+        if self.must_be_init_sym is not None and self.must_be_init_sym != symbol:
+            raise Exception(f"{self.must_be_init_sym} debe ser el símbolo inicial puesto a que posee una lambda producción.")
         
         self.init_sym = symbol
 
     def insert_precedence(self, op1: str, prec: str, op2: str):
+        """ Function to insert a precedence rule in our parser """
 
         if self.built:
             raise Exception(f"no se puede insertar precedencias: analizador construido")
@@ -75,74 +86,84 @@ class Parser:
         id2 = self.opr_index[op2]
         self.precedences[(id1, id2)] = prec
 
-    def build_cc_rec(self, u: int, cur_cc: int, graph: List[List[str]]):
-        self.cc[u] = cur_cc
-        self.len_cc[cur_cc] += 1
-        for v in graph[u]:
-            if self.cc[v] == -1:
-                self.build_cc_rec(v, cur_cc, graph)
+    def find(self, u:int):
+        """ find function of union-set algorithm to calculate equivalence classes """
+        if u != self.cc[u]:
+            self.cc[u] = self.find(self.cc[u])
+        
+        return self.cc[u]
+
+    def union(self, u: int, v: int):
+        """ union function of union-set algorithm to calculate equivalence classes """
+        if (u != v):
+            if (self.size[u] < self.size[v]):
+                u, v = v, u
+            self.cc[v] = u
+            self.size[u] += self.size[v]
 
     def build_cc(self):
-
-        pre_graph = [[] for i in range(2 * self.n_operators)]
+        """ Function to check if = is an equivalence relation by building connected components """
+        
+        # Union find algorithm to find connected components
+        self.size = [1 for i in range(2*self.n_operators)]
+        self.cc = [u for u in range(2*self.n_operators)]
+        deg = [0 for u in range(2*self.n_operators)]
         for ((a, b), p) in self.precedences.items():
             if p == "=":
-                pre_graph[a].append(b + self.n_operators)
-                pre_graph[b + self.n_operators].append(a)
+                u = self.find(a)
+                v = self.find(b + self.n_operators)
+                if u != v:
+                    self.union(u,v)
+                deg[a] += 1
+                deg[b + self.n_operators] += 1
 
-        self.cc = [-1 for i in range(2*self.n_operators)]
-        self.len_cc = []
-        self.n_cc = 0
+        # Checking if each connected component is a complete graph
         for u in range(2 * self.n_operators):
-            if self.cc[u] == -1:
-                self.len_cc.append(0)
-                self.build_cc_rec(u, self.n_cc, pre_graph)
-                self.n_cc += 1
-
-        for u in range(2 * self.n_operators):
-            c = self.cc[u]
-            if len(pre_graph[u]) != self.len_cc[c] - 1:
+            c = self.find(u)
+            if deg[u] != self.size[c] - 1:
                 return True
+
+        for u in range(2* self.n_operators):
+            self.cc[u] = self.find(u)
 
         return False
 
-    def calculate_dist_rec(self, u:int, graph:List) -> bool:
-
+    def calculate_dist_rec(self, u:int, graph:List, vis: List) -> bool:
+        """ dfs search to perform calculation of distances on the precedence graph """
         result = False
-        self.dist[u] = 0
-        self.vis[u] = 0
+        vis[u] = 0
         for v in graph[u]:
-            if self.vis[v] == 0:
+            if vis[v] == 0:
                 return True
-            elif self.vis[v] == -1:
-                result = self.calculate_dist_rec(v, graph)
+            elif vis[v] == -1:
+                result = self.calculate_dist_rec(v, graph, vis)
                 if result:
                     break
             self.dist[u] = max(1+self.dist[v], self.dist[u])
-        self.vis[u] = 1
+        vis[u] = 1
         return result
 
     def calculate_distances(self):
+        """ function to calculate maximum distances in precedence graph """
 
-        graph = [[] for i in range(self.n_cc)]
-        self.vis = [-1 for i in range(self.n_cc)]
-        self.dist = [-1 for i in range(self.n_cc)]
+        # Building precedence graph
+        graph = [[] for i in range(2*self.n_operators)]
+        vis = [-1 for i in range(2*self.n_operators)]
+        self.dist = [0 for i in range(2*self.n_operators)]
         for ((a, b), p) in self.precedences.items():
-            if p == ">":
-                c1 = self.cc[a]
-                c2 = self.cc[b + self.n_operators]
+            c1 = self.cc[a]
+            c2 = self.cc[b + self.n_operators]
+            if p == ">":    
                 graph[c1].append(c2)
             elif p == "<":
-                c1 = self.cc[a + self.n_operators]
-                c2 = self.cc[b]
                 graph[c2].append(c1)
         
         error = False
 
-        for u in range(self.n_cc):
-            if self.dist[u] == -1:
-                error = self.calculate_dist_rec(u, graph)
-
+        for u in range(2*self.n_operators):
+            u = self.cc[u]
+            if vis[u] == -1:
+                error = self.calculate_dist_rec(u, graph, vis)
                 if error:
                     break
 
@@ -150,7 +171,7 @@ class Parser:
 
 
     def build(self):
-
+        """ function to build the parser functions """
         if self.built:
             raise Exception(f"el analizador ya ha sido construido previamente")
         
@@ -177,43 +198,97 @@ class Parser:
         for i in range(self.n_operators):
             print(self.str_val[i] + ": " + str(self._g(i)))
         
-        built = True
+        self.built = True
 
+    def print_parsed(self, parsed: List):
+        """ function to print state of the parsed stack """
+        print("Pila: ", end="")
+        for symbol in parsed:
+            print(symbol, end=" ")
+        print("")
+
+    def print_stack(self, stack: List):
+        """ function to print state of the algorithm stack """
+        print("Entrada procesada: ", end="")
+        for idx in stack:
+            print(self.str_val[idx], end=" ")
+        print("")
+
+    def print_remaining(self, symbols: List[str]):
+        """ function to print state of the remaining string to process """
+        print("Entrada por procesar: ", end="")
+        for sym in symbols:
+            print(sym, end=" ")
+        print("")
+
+    def print_action(self, tp: int, init: str, rule: List):
+        """ function to print action to take """
+        print("Acción: ", end="")
+        if tp == 0:
+            print(f"reducir {init} -> ", end="")
+            for sym in rule:
+                print(f"{sym} ", end="")
+            print("")
+        elif tp == 1:
+            print("leer", end= "")
+        elif tp == 2:
+            print("rechazar. No se encontró ninguna acción a tomar", end="")
+        else:
+            print("aceptar", end="")
+        print("\n")
     
-    def pasrse(self, symbols: List[str]):
-
+    def parse(self, symbols: List[str]):
+        """ function to parse a given input """
         if not self.built:
             raise Exception(f"el analizador no ha sido construido.")
-        
-        self.stack = [0]
-        self.parsed = []
 
+        if any(self.opr_index.get(sym, -1) == -1 for sym in symbols):
+            raise Exception(f"símbolo no reconocido entre los símbolos presentes en la regla")
+
+        symbols.append("$")
+        stack = [0]
+        parsed = []
         cur = 0
+
         while cur < len(symbols):
+            
+            self.print_parsed(parsed)
+            self.print_stack(stack)
+            self.print_remaining(symbols[cur:])
 
-            p = self.stack[-1]
-
+            p = stack[-1]
             e = symbols[cur]
-            eidx = self.opr_index[e]
+            eidx = self.opr_index[e]            
 
             if p == 0 and e == "$":
+                self.print_action(3, "", [])
                 break
 
+            if (p, eidx) not in self.precedences:
+                raise Exception(f"{self.str_val[p]} y {e} no son comparables.")
+
             if self._f(p) <= self._g(eidx):
-                self.stack.append(eidx)
+                stack.append(eidx)
+                parsed.append(e)
                 cur += 1
+                self.print_action(1, "", [])
 
             else:
-                x = self.stack[-1]
-                self.stack.pop()
-                while self._f(self.stack[-1]) >= self._g(x):
-                    x = self.stack[-1]
-                    self.stack.pop()
-                
+
+                x = stack.pop()
+                while self._f(stack[-1]) >= self._g(x):
+                    x = stack.pop()
+                    
                 rule = []
-                while self.opr_index.get(self.parsed[-1], -1) != self.stack[-1]:
-                    rule.append(self.parsed[-1])
-                    self.parsed.pop()
-                rule = self.rules["$".join(reversed(rule)]
-                print(f"Reduce {rule}")
+                while len(parsed) > 0 and self.opr_index.get(parsed[-1], -1) != stack[-1]:
+                    rule.append(parsed.pop())
+                
+                rule = list(reversed(rule))
+                init = self.rules.get("$".join(rule), "")
+                if init == "":
+                    self.print_action(2, "", [])
+                    break
+
+                self.print_action(0, init, rule)
+                parsed.append(init)
 
