@@ -1,0 +1,57 @@
+---------- Parte a ----------
+
+B -> B1 => B2       {B1.false <- B.true
+                     B1.true  <- newlabel()
+                     B2.true  <- B.true
+                     B2.false <- B.false
+                     B.code <- B1.code ++ label(B1.true) ++ B2.code}
+
+---------- Parte b ----------
+
+B -> B1 => M B2         {backpatch(B1.truelist, M.instr)
+                        B.truelist <- merge(B1.falselist, B2.truelist)
+                        B.falselist <- B2.falselist}
+M -> lambda             {M.instr = nextinstr}
+
+---------- Parte c ----------
+
+S -> while B1 : S1 & B2 : S2        {begin <- newlabel()
+                                     snd <- newlabel()
+                                     B1.true <- newlabel()
+                                     B1.false <- snd
+                                     B2.true <- newlabel()
+                                     B2.false <- S.next
+                                     S1.next <- begin
+                                     S2.next <- begin
+                                     S.code <- label(begin) ++ 
+                                               B1.code ++ 
+                                               label(B1.true) ++ 
+                                               S1.code ++ 
+                                               label(snd) ++ 
+                                               B2.code ++ 
+                                               label(B2.true) ++ 
+                                               S2.code}            
+
+---------- Parte d ----------
+
+S -> while M1 B1 : M2 S1 & M3 M4 B2 : M5 S2   {
+                                                backpatch(S1.nextlist, M1.instr)
+                                                backpatch(S2.nextlist, M1.instr)
+                                                backpatch(B1.truelist, M2.instr)
+                                                backpatch(B1.falselist, M4.instr)
+                                                backpatch(B2.truelist, M5.instr)
+                                                S.nextlist <- B2.falselist
+                                                gen('goto', M1.instr)}
+
+M1 -> lambda                                {M1.instr = nextinstr}
+
+M2 -> lambda                                {M2.instr = nextinstr
+                                            gen('goto', _)}
+
+M3 -> lambda                                {M3.instr = nextinstr
+                                            gen('goto', _)}
+
+M4 -> lambda                                {M4.instr = nextinstr}
+
+M5 -> lambda                                {M5.instr = nextinstr
+                                            gen('goto', _)}

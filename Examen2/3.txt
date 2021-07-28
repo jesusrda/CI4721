@@ -1,0 +1,37 @@
+---------- Parte a ----------
+
+E -> 
+    E1 + E2         {if E1.type == INT and E2.type == INT
+                        then E.type = INT
+                        else E.type = TYPE_ERROR}  
+   
+    | E1 ^ E2       {if E1.type == BOOL and E2.type == BOOL
+                        then E.type = BOOL
+                        else E.type = TYPE_ERROR}   
+   
+    |  E1 < E2      {if (E1.type == INT and E2.type == INT) 
+                        or (E1.type == BOOL and E2.type == BOOL)
+                            then E.type = BOOL
+                            else E.type = TYPE_ERROR}       
+
+    | E1 ?: E2      {if E1.type == NULL
+                        then E.type = E2.type
+                        else if E2.type == TYPE_ERROR 
+                            then E.type = TYPE_ERROR
+                            else E.type = E1.type}  
+   
+    | E1!!          {if E1.type == null or E1.type == TYPE_ERROR
+                        then E.type = TYPE_ERROR else E.type = E1.type}
+   
+    | (E1)           {E.type = E1.type}
+    | num            {E.type = INT}
+    | true           {E.type = BOOL}            
+    | false          {E.type = BOOL}
+    | null           {E.type = NULL}
+
+---------- Parte c ----------
+
+S -> repeatWhen E lt S1 gt S2        {if E.type == int
+                                         and S1.type != error and S2.type != error
+                                            then S.type = void
+                                            else S.type = error}
